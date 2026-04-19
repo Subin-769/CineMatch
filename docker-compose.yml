@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: cinematch_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: cinematch
+      POSTGRES_USER: cinematchuser
+      POSTGRES_PASSWORD: cinematchpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

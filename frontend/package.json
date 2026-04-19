@@ -1,0 +1,48 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test": "vitest --environment jsdom"
+  },
+  "dependencies": {
+    "@fontsource/poppins": "^5.2.7",
+    "@react-oauth/google": "^0.13.4",
+    "axios": "^1.13.6",
+    "framer-motion": "^11.18.2",
+    "lucide-react": "^0.562.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.26.2",
+    "recharts": "^2.15.4",
+    "swiper": "^12.1.2"
+  },
+  "overrides": {
+    "esbuild": "^0.25.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vitejs/plugin-react-swc": "^4.3.0",
+    "autoprefixer": "^10.4.27",
+    "esbuild": "^0.25.3",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "jsdom": "^26.1.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.4.21",
+    "vitest": "^4.1.2"
+  }
+}

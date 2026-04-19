@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    container_name: cinematch_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-cinematch}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    # If you already have local Postgres on 5432, keep 5433:5432 to avoid conflicts.
+    ports:
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - cinematch_pgdata:/var/lib/postgresql/data
+
+volumes:
+  cinematch_pgdata:

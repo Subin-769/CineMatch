@@ -1,0 +1,16 @@
+{
+  "name": "cinematch",
+  "private": true,
+  "scripts": {
+    "backend": "./.venv/bin/python backend/manage.py runserver",
+    "frontend": "npm --prefix frontend run dev",
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm:backend\" \"npm:frontend\""
+  },
+  "dependencies": {
+    "lucide-react": "^0.563.0",
+    "swiper": "^12.0.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

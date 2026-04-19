@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.pyc
+venv/
+venv */
+.venv/
+.venv*/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3.bak
+media/
+.cache/
+
+# Node
+node_modules/
+node_modules.nosync/
+frontend/dist/
+frontend/.vite/
+.npm/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.production
+.env.save
+
+# Cookies / temp
+cookies.txt
+cookiejar.txt
+
+# Vite timestamps
+*.timestamp-*
+
+# Claude Code
+.claude/
+
+# ML models (large files - back these up separately)
+*.pkl
+*.h5
+*.pt
+*.pth
