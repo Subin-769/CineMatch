@@ -286,12 +286,8 @@ SIMILAR_PATTERNS = (
 ACTOR_PATTERNS = (
     re.compile(r"\b(?:movies|films)\s+with\s+([a-z][a-z .'-]{1,80}?)(?:\s+(?:from|in|that|but)\b|[,.!?;:]|$)", re.IGNORECASE),
     re.compile(r"\bstarring\s+([a-z][a-z .'-]{1,80}?)(?:\s+(?:from|in|that|but)\b|[,.!?;:]|$)", re.IGNORECASE),
-    # "tom hanks movies", "brad pitt films" — only match if the text before "movies"
-    # looks like a person name (2-4 capitalized words, no command verbs)
     re.compile(r"^([a-z][a-z'-]+(?:\s+[a-z][a-z'-]+){1,3})\s+(?:movies|films)\s*$", re.IGNORECASE),
-    # "movies of tom hanks", "films of brad pitt"
     re.compile(r"\b(?:movies|films)\s+(?:of|from|featuring)\s+([a-z][a-z .'-]{1,80}?)(?:\s+(?:from|in|that|but)\b|[,.!?;:]|$)", re.IGNORECASE),
-    # "show me tom hanks movies", "suggest tom cruise films", "recommend brad pitt movies"
     re.compile(
         r"(?:(?:show|suggest|recommend|give|find|get)\s+me\s+some"
         r"|(?:show|suggest|recommend|give|find|get)\s+me"
@@ -300,14 +296,12 @@ ACTOR_PATTERNS = (
         r"\s+(?:movies|films)\b",
         re.IGNORECASE,
     ),
-    # "suggest me movies of tom hanks"
     re.compile(r"(?:show|suggest|recommend|give|find|get)\s+(?:me\s+)?(?:some\s+)?(?:movies|films)\s+(?:of|from|by|with|featuring)\s+([a-z][a-z .'-]{1,80}?)(?:\s+(?:from|in|that|but)\b|[,.!?;:]|$)", re.IGNORECASE),
 )
 
 DIRECTOR_PATTERNS = (
     re.compile(r"\bdirected by\s+([a-z][a-z .'-]{1,80}?)(?:\s+(?:from|in|that|but)\b|[,.!?;:]|$)", re.IGNORECASE),
     re.compile(r"\b(?:movies|films)\s+by\s+([a-z][a-z .'-]{1,80}?)(?:\s+(?:from|in|that|but)\b|[,.!?;:]|$)", re.IGNORECASE),
-    # "suggest me movies by nolan"
     re.compile(r"(?:show|suggest|recommend|give|find|get)\s+(?:me\s+)?(?:some\s+)?(?:movies|films)\s+by\s+([a-z][a-z .'-]{1,80}?)(?:\s+(?:from|in|that|but)\b|[,.!?;:]|$)", re.IGNORECASE),
 )
 

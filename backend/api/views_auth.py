@@ -179,10 +179,6 @@ class GoogleLogin(SocialLoginView):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def register(request):
-    """
-    POST body: { username, email, password }
-    Response: 201 and cookies set on success
-    """
     username = (request.data.get("username") or "").strip()
     email = (request.data.get("email") or "").strip()
     password = request.data.get("password") or ""
@@ -227,11 +223,6 @@ def register(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login(request):
-    """
-    POST body: { username_or_email, password }
-    Accepts username or email.
-    Sets cookies on success.
-    """
     identifier = (
         request.data.get("username_or_email")
         or request.data.get("identifier")
@@ -302,9 +293,6 @@ def refresh(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def logout(request):
-    """
-    Clear auth cookies.
-    """
     resp = Response({"detail": "logged out"}, status=status.HTTP_200_OK)
     _clear_auth_cookies(resp)
     return resp
@@ -313,9 +301,6 @@ def logout(request):
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def me(request):
-    """
-    Return or update current user if authenticated.
-    """
     u = request.user
     if request.method == "GET":
         return Response({"user": _user_payload(u)}, status=status.HTTP_200_OK)

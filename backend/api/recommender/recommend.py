@@ -125,7 +125,6 @@ VIBE_SYNONYMS = {
 
 
 def _user_salt(user_id):
-    """Deterministic per-user float in [0, 1) for breaking ties without randomness drift."""
     if user_id is None:
         return 0.0
     h = hashlib.sha256(f"cinematch-user-{user_id}".encode("utf-8")).hexdigest()
@@ -133,14 +132,11 @@ def _user_salt(user_id):
 
 
 def _user_rng(user_id, bucket=""):
-    """Deterministic Random() seeded from (user_id, bucket). Same user always gets
-    the same ordering; different users get different orderings even from the same pool."""
     seed = hashlib.sha256(f"cinematch-{user_id}-{bucket}".encode("utf-8")).digest()
     return random.Random(int.from_bytes(seed[:8], "big"))
 
 
 def _deterministic_shuffle(user_id, bucket, items):
-    """Return a new list shuffled deterministically per user."""
     if not items:
         return []
     items = list(items)
@@ -149,14 +145,6 @@ def _deterministic_shuffle(user_id, bucket, items):
 
 
 def invalidate_user_recommendation_caches(user_id):
-    """Mark a user's recommendation caches for refresh when their signals change.
-
-    Strategy: clear the *fresh* cache so the next request falls through to
-    compute, but KEEP the long-lived stale cache so the next hit returns
-    instantly (stale) while the refresh runs in the background. Also schedules
-    a background refresh immediately so the cache is warm by the time the user
-    reloads the page.
-    """
     if user_id is None:
         return
     keys = [f"interactions_{user_id}"]
@@ -543,14 +531,6 @@ def _globally_popular_local_movies(exclude_tmdb_ids=None, limit=LOCAL_CANDIDATE_
 
 
 def _cold_start_onboarding_candidates(user_id, preferences, n):
-    """Cold-start recommender driven purely by onboarding signals.
-
-    Mixes the user's explicit genre picks with vibe-inferred genres, then pulls
-    a large TMDB pool across several pages AND several sort orders so that two
-    users who share onboarding prefs still get different orderings. A
-    per-user deterministic shuffle breaks remaining ties — same user always
-    gets the same list, different users get different lists.
-    """
     _, disliked, seen = _interaction_scores(user_id)
     exclude = set(seen) | set(disliked)
     genre_preferences = _onboarding_genre_set(preferences)
@@ -576,9 +556,6 @@ def _cold_start_onboarding_candidates(user_id, preferences, n):
         local_scored.append((movie.tmdb_id, movie_score))
     local_scored.sort(key=lambda item: item[1], reverse=True)
 
-    # --- 2) Remote TMDB candidates (cached, parallel, timeout-budgeted) ---
-    # If local already has plenty, skip the remote call entirely — the per-user
-    # shuffle on the tail still gives variety between users.
     have_enough_local = len(local_scored) >= max(n * 3, n + 6)
     remote_pool = []
 
@@ -605,7 +582,6 @@ def _cold_start_onboarding_candidates(user_id, preferences, n):
 
     if effective_genre_ids and not have_enough_local:
         rng = _user_rng(user_id, "coldstart-pages")
-        # Only 2 pages now (was 3) to cut TMDB round-trips in half.
         page_pool = [1, 2, 3, 4, 5]
         rng.shuffle(page_pool)
         pages = page_pool[:2]
@@ -614,8 +590,6 @@ def _cold_start_onboarding_candidates(user_id, preferences, n):
         sort_orders = ["vote_average.desc", "popularity.desc", "vote_count.desc"]
         sort_order = sort_orders[int(_user_salt(user_id) * len(sort_orders)) % len(sort_orders)]
 
-        # Cap at 2 remote jobs total. Local DB already provides diversity; remote
-        # just needs one slice of the genre catalogue per user.
         fetch_jobs = [(joined, sort_order, pages[0], "500"), (joined, sort_order, pages[1], "500")]
 
         with ThreadPoolExecutor(max_workers=len(fetch_jobs)) as ex:
@@ -626,9 +600,6 @@ def _cold_start_onboarding_candidates(user_id, preferences, n):
                 except Exception:
                     pass
 
-    # --- 3) Merge local + remote pools, excluding already-seen/disliked ---
-    # Local scored IDs first (ranked), then remote pool shuffled per-user so every user
-    # sees a different slice as the primary candidates.
     remote_unique = []
     remote_seen = set()
     for tmdb_id in remote_pool:
@@ -648,8 +619,6 @@ def _cold_start_onboarding_candidates(user_id, preferences, n):
         picked_seen.add(tmdb_id)
         return True
 
-    # Interleave local top picks and per-user-shuffled remote picks so the result is
-    # neither "top global" nor "random" — it's ranked locally but diversified remotely.
     target = max(n * 3, n + 6)
     local_iter = iter(local_scored)
     remote_iter = iter(remote_unique)
@@ -674,13 +643,10 @@ def _cold_start_onboarding_candidates(user_id, preferences, n):
         if not progressed:
             break
 
-    # --- 4) Final per-user shuffle among the top chunk for extra variety ---
-    # Keep the strongest local matches near the top; shuffle the discovery tail.
     head = picked[: max(3, n // 2)]
     tail = _deterministic_shuffle(user_id, "coldstart-tail", picked[max(3, n // 2):])
     picked = head + tail
 
-    # --- 5) Backfills if still short ---
     if len(picked) < n:
         for movie in _globally_popular_local_movies(
             exclude_tmdb_ids=exclude | picked_seen, limit=n * 4
@@ -925,16 +891,11 @@ def _genre_bonus(candidate_genre_ids, genre_profile):
     bonus = sum(genre_profile.get(gid, 0.0) for gid in candidate_genre_ids)
     return bonus / total
 
-
-# Background thread pool shared across requests so we don't spin up/tear down
-# executors on every call. Capped small — this is for refresh jobs, not fanout.
 _BACKGROUND_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="recs-refresh")
 _REFRESHING = set()  # in-flight user_ids to avoid duplicate refreshes
 
 
 def _background_refresh_rfy(user_id, n):
-    """Kick off a refresh of recommended_for_you in the background. Safe to call
-    repeatedly — duplicate refreshes for the same user are ignored."""
     key = (user_id, n)
     if key in _REFRESHING:
         return
@@ -955,8 +916,6 @@ def _background_refresh_rfy(user_id, n):
 
 
 def recommended_for_you(user_id, n=RECOMMENDED_FOR_YOU_LIMIT):
-    """Fast, cache-first entry point. Returns cached result instantly when
-    available; falls back to blocking compute only on true cache miss."""
     n = max(int(n or RECOMMENDED_FOR_YOU_LIMIT), 1)
     cache_key = f"recommended_for_you:{user_id}:{n}"
     stale_key = f"recommended_for_you_stale:{user_id}:{n}"
@@ -965,8 +924,6 @@ def recommended_for_you(user_id, n=RECOMMENDED_FOR_YOU_LIMIT):
     if cached is not None:
         return cached
 
-    # Fresh cache expired, but we may still have a recent stale copy that's
-    # "good enough" to return immediately while we refresh in the background.
     stale = cache.get(stale_key)
     if stale is not None:
         _background_refresh_rfy(user_id, n)
@@ -991,10 +948,6 @@ def _compute_recommended_for_you(user_id, n):
     seeds = liked_movies + high_rated_movies + watchlist_movies + recent_movies
     seed_movies = _dedupe_seed_movies([(movie, weight) for movie, weight in seeds if movie])
 
-    # ---- Cold-start short-circuit ----
-    # No loved/liked/rated/watchlist/watched signals at all. If the user has onboarding
-    # data we route through the onboarding cold-start path; otherwise fall through to
-    # the standard discover-based fetch which will also shuffle per-user.
     has_any_signal = bool(seed_movies) or bool(profile["ratings"]) or bool(profile["preference_rows"])
     cold_start_via_onboarding = (
         not has_any_signal
@@ -1018,14 +971,9 @@ def _compute_recommended_for_you(user_id, n):
     candidates = []
     candidate_meta = {}
 
-    # Run all data fetches in parallel with a hard time budget so the endpoint
-    # never hangs for minutes on cold cache — slower fetchers are skipped and
-    # their results will populate the next request via the cache.
     seeds_for_tmdb = _seed_movies_for_personalized(user_id, limit=2)
     top_genre_ids = [gid for gid, _ in genre_profile.most_common(2)]
 
-    # Per-user discover variety: page + sort chosen from a stable seed so users
-    # sharing top genres still see different catalogue slices.
     discover_rng = _user_rng(user_id, "rfy-discover")
     discover_page = discover_rng.choice([1, 2, 3])
     discover_sort = discover_rng.choice(["popularity.desc", "vote_average.desc", "vote_count.desc"])
@@ -1040,7 +988,6 @@ def _compute_recommended_for_you(user_id, n):
         if not top_genre_ids:
             return []
         joined = ",".join(str(g) for g in top_genre_ids)
-        # Cached at the tmdb_get layer now — this call is ~instant on repeat.
         try:
             data = discover_movies(
                 with_genres=joined,
@@ -1116,14 +1063,8 @@ def _compute_recommended_for_you(user_id, n):
             + RECOMMEND_WEIGHTS["genre_bonus"] * bonus
         )
 
-        # Apply onboarding boost so vibe + frequency affect the ranking even for
-        # users with ratings — new users who just finished onboarding still see
-        # genre/vibe-aligned picks rise to the top.
         onboarding_boost = _onboarding_boost(candidate_movie, onboarding_preferences)
 
-        # Per-user deterministic jitter to diversify rankings when two users share
-        # the same seed pool. Tiny offset per candidate — enough to reorder ties
-        # without overriding genuine score differences.
         jitter_seed = hashlib.sha256(f"{user_id}-{tmdb_id}".encode("utf-8")).hexdigest()
         jitter = (int(jitter_seed[:8], 16) / float(0xFFFFFFFF)) * 0.05
 
@@ -1655,13 +1596,8 @@ def personalized_recommend(user_id, n=10, genre=None):
         watchlist_signal_score = _watchlist_signal_score(candidate_movie, watchlist_rows)
         language_weight = _language_multiplier(candidate_movie, language_weights)
 
-        # FIX 1: onboarding_boost was hardcoded to 1.0 — now actually applied
-        # This makes cold-start users (new registrations) get genre/vibe-aware recs
         onboarding_boost = _onboarding_boost(candidate_movie, onboarding_preferences)
 
-        # FIX 2: rating_signal MULTIPLIES the base score instead of just adding
-        # A 5-star signal now amplifies the candidate's score significantly
-        # A dislike signal suppresses it — this is the "rating-first priority" behavior
         if rating_signal_score > 0:
             rating_multiplier = 1.0 + (rating_signal_score * 0.5)
         elif rating_signal_score < 0:

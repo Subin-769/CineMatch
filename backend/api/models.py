@@ -8,10 +8,6 @@ from django.dispatch import receiver
 
 
 class Movie(models.Model):
-    """
-    Stores movie metadata.
-    Data can be populated manually, via TMDB API, or dataset import.
-    """
 
     tmdb_id = models.IntegerField(
         unique=True,
@@ -58,10 +54,6 @@ class Movie(models.Model):
 
 
 class Rating(models.Model):
-    """
-    Stores user ratings for movies.
-    This table forms the user–item matrix for collaborative filtering.
-    """
 
     user = models.ForeignKey(
         User,
@@ -95,10 +87,6 @@ class Rating(models.Model):
 
 
 class Watchlist(models.Model):
-    """
-    Stores movies a user plans to watch.
-    Helps with cold-start problem and user engagement.
-    """
 
     user = models.ForeignKey(
         User,
@@ -126,10 +114,6 @@ class Watchlist(models.Model):
 
 
 class Review(models.Model):
-    """
-    Optional future feature.
-    Stores textual user reviews and star ratings.
-    """
 
     user = models.ForeignKey(
         User,
@@ -156,9 +140,6 @@ class Review(models.Model):
 
 
 class UserActivity(models.Model):
-    """
-    Generic user activity log to power personalization.
-    """
 
     ACTION_CHOICES = [
         ("watched", "Watched"),
@@ -203,9 +184,6 @@ class UserActivity(models.Model):
 
 
 class UserMoviePreference(models.Model):
-    """
-    Stores explicit preference signals from the user (love/like/dislike).
-    """
 
     PREFERENCE_CHOICES = [
         ("love", "Love"),
@@ -239,9 +217,6 @@ class UserMoviePreference(models.Model):
 
 
 class WatchHistory(models.Model):
-    """
-    Stores movie views to learn user behavior.
-    """
 
     user = models.ForeignKey(
         User,
@@ -267,9 +242,6 @@ class WatchHistory(models.Model):
 
 
 class SearchHistory(models.Model):
-    """
-    Stores user search queries.
-    """
 
     user = models.ForeignKey(
         User,
@@ -290,9 +262,6 @@ class SearchHistory(models.Model):
 
 
 class UserPreference(models.Model):
-    """
-    Stores explicit preferences for cold-start users.
-    """
 
     user = models.OneToOneField(
         User,
@@ -318,9 +287,6 @@ class UserPreference(models.Model):
 
 
 class UserProfile(models.Model):
-    """
-    Stores user-level flags and profile metadata.
-    """
 
     user = models.OneToOneField(
         User,

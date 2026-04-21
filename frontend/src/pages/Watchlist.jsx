@@ -19,9 +19,6 @@ import {
 } from "lucide-react";
 import { API_BASE } from "../api/apiBase";
 
-/* =========================
-   PORTAL DROPDOWN (fixes z-index forever)
-========================= */
 function SortDropdownPortal({ open, anchorRef, options, value, onSelect, onClose }) {
   const [pos, setPos] = useState({ top: 0, left: 0, width: 192 });
 
@@ -89,9 +86,6 @@ function SortDropdownPortal({ open, anchorRef, options, value, onSelect, onClose
   );
 }
 
-/* =========================
-   TOOLBAR
-========================= */
 function WatchlistToolbar({
   sortBy,
   setSortBy,
@@ -196,9 +190,6 @@ function WatchlistToolbar({
   );
 }
 
-/* =========================
-   GRID CARD
-========================= */
 function GridCard({ movie, onRemove, onClick }) {
   const [imgLoaded, setImgLoaded] = useState(false);
 
@@ -261,9 +252,6 @@ function GridCard({ movie, onRemove, onClick }) {
   );
 }
 
-/* =========================
-   DETAILED ROW
-========================= */
 function DetailedRow({ movie, onRemove, onClick }) {
   const [imgLoaded, setImgLoaded] = useState(false);
 
@@ -367,9 +355,6 @@ function DetailedRow({ movie, onRemove, onClick }) {
   );
 }
 
-/* =========================
-   LOADING
-========================= */
 function GridSkeleton() {
   return (
     <div className="space-y-3">
@@ -418,9 +403,6 @@ function LoadingState({ viewMode }) {
   );
 }
 
-/* =========================
-   EMPTY / ERROR / LOGIN REQUIRED
-========================= */
 function EmptyState() {
   const navigate = useNavigate();
 
@@ -505,9 +487,6 @@ function LoginRequired() {
   );
 }
 
-/* =========================
-   UNDO TOAST (fixed)
-========================= */
 function UndoToast({ movie, onUndo, onClose, progress }) {
   return (
     <div
@@ -555,9 +534,6 @@ function UndoToast({ movie, onUndo, onClose, progress }) {
   );
 }
 
-/* =========================
-   MAIN PAGE
-========================= */
 export default function Watchlist() {
   const navigate = useNavigate();
 

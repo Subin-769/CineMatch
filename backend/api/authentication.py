@@ -6,16 +6,6 @@ from drf_spectacular.extensions import OpenApiAuthenticationExtension
 
 
 class CookieJWTAuthentication(JWTAuthentication):
-    """
-    Read JWT access token from HttpOnly cookie named "access_token".
-
-    Behavior:
-    - If cookie missing, return None so request remains anonymous.
-    - If token invalid or expired, return None so endpoints that handle refresh
-      can still run.
-    - If token valid, return (user, validated_token) as required by DRF.
-    """
-
     def authenticate(self, request):
         raw_token = request.COOKIES.get("access_token")
         if not raw_token:

@@ -71,7 +71,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const showToast = useToast();
 
-  // Existing sections
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [newReleases, setNewReleases] = useState([]);
   const [recommendedMovies, setRecommendedMovies] = useState([]);
@@ -125,10 +124,6 @@ export default function Home() {
     }
     return true;
   };
-
-  // ---------------------------------------------------------------------------
-  // Section loaders
-  // ---------------------------------------------------------------------------
 
   const loadPersonalized = async (ref) => {
     if (!user) {
@@ -309,13 +304,6 @@ export default function Home() {
     loadSurprise(isMountedRef, surpriseExclude);
   };
 
-  // ---------------------------------------------------------------------------
-  // Tiered loading strategy — show above-the-fold content ASAP, then load
-  // the rest progressively so the dev server is never hit with more than
-  // ~2 concurrent requests (keeps a memory-constrained machine responsive).
-  // ---------------------------------------------------------------------------
-  // Tier 1: the hero + first visible row. Trending first (populates hero),
-  // then new releases. Hidden gems is below the fold — defer to idle.
   useEffect(() => {
     isMountedRef.current = true;
     setLoadingTrending(true);
@@ -352,8 +340,6 @@ export default function Home() {
     };
   }, []);
 
-  // Tier 2+3: personalized sections. Only fires when auth has resolved (loading=false).
-  // Serialize requests pairwise so we never hit the backend with more than 2 at once.
   useEffect(() => {
     if (loading) return;
     isMountedRef.current = true;
@@ -418,9 +404,6 @@ export default function Home() {
     };
   }, [user?.id]);
 
-  // ---------------------------------------------------------------------------
-  // Filtered views (search)
-  // ---------------------------------------------------------------------------
   const filteredTrending = useMemo(() => filterMoviesByQuery(trendingMovies, searchQuery), [trendingMovies, searchQuery]);
   const filteredRecommended = useMemo(() => filterMoviesByQuery(recommendedMovies, searchQuery), [recommendedMovies, searchQuery]);
   const filteredLoved = useMemo(() => filterMoviesByQuery(lovedMovies, searchQuery), [lovedMovies, searchQuery]);

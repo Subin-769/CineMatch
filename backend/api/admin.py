@@ -7,7 +7,6 @@ from .models import Movie, Rating, Watchlist, Review
 
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
-    # only real fields on Movie; do not reference rating/genre/release_date
     list_display = ("id", "title", "tmdb_id", "release_year", "avg_rating")
     search_fields = ("title", "genres", "tmdb_id")
     list_filter = ("release_year",)

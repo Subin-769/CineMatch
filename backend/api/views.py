@@ -1,4 +1,3 @@
-# backend/api/views.py
 import math
 import time
 from typing import Optional
@@ -111,17 +110,12 @@ def batched_personalized_sections(*args, **kwargs):
 
 
 def _invalidate_recs_for_user(user_id):
-    """Drop this user's cached recommendations so the next request sees fresh
-    results that reflect their new rating / preference / watchlist / onboarding."""
     try:
         _recommender().invalidate_user_recommendation_caches(user_id)
     except Exception:
         pass
 
 
-# -----------------------
-# Helpers
-# -----------------------
 def _error(message: str, status_code: int = 400, **extra):
     payload = {"detail": message}
     payload.update(extra)
@@ -135,11 +129,6 @@ def _tmdb_poster_url(poster_path: Optional[str]) -> Optional[str]:
 
 
 def _hydrate_payload(payload):
-    """Add a 'movies' array of hydrated movie objects to a recommendation payload.
-
-    The payload must contain a 'tmdb_ids' list. Returns the same payload dict
-    with an added 'movies' key containing full movie card objects.
-    """
     tmdb_ids = payload.get("tmdb_ids") or []
     if not tmdb_ids:
         payload.setdefault("movies", [])
@@ -149,10 +138,6 @@ def _hydrate_payload(payload):
 
 
 def _log_activity(user, action_type: str, movie: Movie | None = None, rating: int | None = None, **metadata):
-    """
-    Best-effort activity logging. Never block core flows if logging fails
-    (e.g., migrations not applied yet).
-    """
     try:
         UserActivity.objects.create(
             user=user,
@@ -1795,7 +1780,6 @@ def recs_watchlist(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def recs_batched(request):
-    """Return loved/liked/rated/watchlist sections in a single response with cross-section dedup."""
     n = request.GET.get("n", 12)
     try:
         n = int(n)
@@ -1891,9 +1875,6 @@ def recs_recommended_for_you(request):
     if cached_response is not None:
         return Response(cached_response)
 
-    # recommended_for_you is now cache-first with stale-while-revalidate, so
-    # it returns almost instantly. We keep a modest safety timeout but drop
-    # the nested ThreadPoolExecutor — it added overhead without real value.
     start_time = time.time()
     try:
         payload = recommended_for_you(target_user_id, n)
@@ -1912,10 +1893,6 @@ def recs_recommended_for_you(request):
         except Exception:
             pass
 
-    # Prediction logging is a DB write that blocks the response. Only log on
-    # *fresh* computes (not on cache hits from within the same request cycle)
-    # and skip entirely for very fast responses which are almost certainly
-    # cache hits. Keeps the hot path DB-write-free.
     if recommended_ids and elapsed_ms >= 50:
         try:
             active_models = list(RecommenderModel.objects.filter(status="active").only("id"))
@@ -1985,10 +1962,6 @@ def recs_log_timing(request):
         }
     )
 
-
-# -----------------------
-# Helper: Create/Update local Movie from TMDB
-# -----------------------
 def get_or_create_movie_from_tmdb(tmdb_id: int) -> Movie:
     # Do not fail watchlist/rating just because TMDB is unavailable.
     try:
@@ -2044,10 +2017,6 @@ def get_or_create_movie_from_tmdb(tmdb_id: int) -> Movie:
 
     return movie
 
-
-# -----------------------
-# Watchlist (AUTH required)
-# -----------------------
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def toggle_watchlist(request):
@@ -2190,10 +2159,6 @@ def get_watchlist(request):
 
     return Response(data)
 
-
-# -----------------------
-# Rating (AUTH required)
-# -----------------------
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def add_rating(request):
@@ -2369,9 +2334,7 @@ def my_preferences(request):
     return Response(data)
 
 
-# -----------------------
 # Reviews
-# -----------------------
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def add_review_tmdb(request):
@@ -2436,19 +2399,14 @@ def list_reviews_tmdb(request, tmdb_id):
     return Response(data)
 
 
-# -----------------------
 # Legacy / Local Movie endpoints (optional)
-# -----------------------
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def movie_list(request):
     qs = Movie.objects.all().values()
     return Response(list(qs))
 
-
-# -----------------------
 # TMDB Discover (Public)
-# -----------------------
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def tmdb_discover(request):
@@ -2532,9 +2490,7 @@ def tmdb_discover(request):
     return Response(response_data)
 
 
-# -----------------------
 # AI Recommender (Public)
-# -----------------------
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def ai_recommend(request):
@@ -2749,9 +2705,7 @@ def chatbot_recommend(request):
     return ai_recommend(request)
 
 
-# -----------------------
 # Bulk TMDB hydration endpoint
-# -----------------------
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def tmdb_bulk(request):
@@ -2774,9 +2728,7 @@ def tmdb_bulk(request):
     return Response({"movies": movies})
 
 
-# -----------------------
 # New recommendation sections
-# -----------------------
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def recs_trending_genre(request):
